@@ -124,7 +124,7 @@ async function reachable(url) {
 }
 
 function saveLinks(links) {
-  fs.writeFileSync(path.join(DATA, 'links.json'), JSON.stringify({ ...links, demo: DEMO, startedAt: new Date().toISOString() }, null, 2));
+  fs.writeFileSync(path.join(DATA, 'links.json'), JSON.stringify({ ...links, demo: DEMO, pid: process.pid, startedAt: new Date().toISOString() }, null, 2));
 }
 
 /* ---------------------------------------------------------------- tunnel */

@@ -36,7 +36,7 @@ To try it first, type **Start the Assignment Lab with sample people**. The sampl
    - On a Mac with Homebrew, run `brew install cloudflared`.
    - On Windows, run `winget install --id Cloudflare.cloudflared`.
    - On anything else, download it from https://github.com/cloudflare/cloudflared/releases.
-3. In this folder, run `node start.js`.
+3. In this folder, run `node start.js`. Without cloudflared, the lab still starts, and only phones on the same Wi-Fi as the laptop can join.
 
 | Command | What it does |
 |---|---|

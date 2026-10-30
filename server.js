@@ -18,8 +18,8 @@ const QRSvg = require('./vendor/qrcode/renderer/svg-tag');
 
 const PUBLIC = path.join(__dirname, 'public');
 const LEVELS_MATCH = 3; // 0 not at all, 1 would like to use AI, 2 using AI now
-const MAX_MATCH = 300;
-const MAX_IDEAS = 300;
+const MAX_MATCH = 1000;
+const MAX_IDEAS = 500;
 
 const clean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, n);
 const int = (v, lo, hi, dflt) => (Number.isInteger(v) && v >= lo && v <= hi ? v : dflt);
@@ -143,7 +143,13 @@ function createLab({ settingsFile = path.join(__dirname, 'settings.json'), dataF
   }
   const sweep = setInterval(() => { const now = Date.now(); for (const [k, b] of buckets) if (now > b.reset) buckets.delete(k); }, 60000);
   sweep.unref();
-  const who = (req, device) => `${device}:${req.headers['cf-connecting-ip'] || req.socket.remoteAddress}`;
+  // The phone's network address. Cloudflare's own header counts only when the request came through the
+  // tunnel on this computer, because a phone on the Wi-Fi could send that header itself.
+  const ipOf = (req) => (LOOPBACK.has(req.socket.remoteAddress) && req.headers['cf-connecting-ip']) || req.socket.remoteAddress;
+  const who = (req, device) => `${device}:${ipOf(req)}`;
+  // A phone can make up a new id for every send, so each network address also gets a limit on new
+  // answers. A whole room can share one campus address, so the limit sits well above a room's size.
+  const tooMany = (res) => send(res, 429, { error: 'Too many answers came from this network in the last few minutes. Wait a minute and try again.' });
 
   // QR codes are drawn from the current link on each request, so a new Cloudflare link needs no restart.
   const qrCache = new Map();
@@ -202,7 +208,7 @@ function createLab({ settingsFile = path.join(__dirname, 'settings.json'), dataF
         rows[id] = { lvl, help: lvl === 2 && !!r.help };
       }
     }
-    const star = rows[b.star] ? b.star : '';
+    const star = typeof b.star === 'string' && Object.prototype.hasOwnProperty.call(rows, b.star) ? b.star : '';
     return { name: clean(b.name, 40), div: S.divs.includes(b.div) ? b.div : '', rows, star };
   }
 
@@ -229,6 +235,7 @@ function createLab({ settingsFile = path.join(__dirname, 'settings.json'), dataF
   const PAGES = { '/match': 'match.html', '/groups': 'groups.html', '/idea': 'idea.html', '/toolkit': 'toolkit.html' };
 
   async function handle(req, res) {
+    if (req.method === 'POST' && !isHost(req) && !allowed('ip' + ipOf(req), 300, 60000)) return tooMany(res);
     const url = new URL(String(req.url || '/').replace(/^\/+/, '/'), 'http://x');
     const p = url.pathname;
     const GET = req.method === 'GET' || req.method === 'HEAD';
@@ -280,6 +287,7 @@ function createLab({ settingsFile = path.join(__dirname, 'settings.json'), dataF
       const old = state.match.find((m) => m.device === device);
       if (old) Object.assign(old, a, { at: Date.now() });
       else {
+        if (!allowed('new-m' + ipOf(req), 100, 300000)) return tooMany(res);
         if (state.match.length >= MAX_MATCH) return send(res, 503, { error: `The list of answers is full. Tell ${S.hostMid}.` });
         state.match.push({ id: crypto.randomBytes(6).toString('hex'), device, ...a, at: Date.now() });
       }
@@ -336,6 +344,7 @@ function createLab({ settingsFile = path.join(__dirname, 'settings.json'), dataF
       const key = clean(b.key, 40);
       const dup = key && state.ideas.find((x) => x.device === device && x.key === key);
       if (dup) return send(res, 200, { ok: true, id: dup.id });
+      if (!allowed('new-i' + ipOf(req), 60, 300000)) return tooMany(res);
       if (state.ideas.length >= MAX_IDEAS) return send(res, 503, { error: `The toolkit is full. Tell ${S.hostMid}.` });
       const g = groupOf(device);
       const id = crypto.randomBytes(6).toString('hex');
