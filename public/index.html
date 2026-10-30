@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Host screen · {{TITLE}}</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/lab.css">
+<style>
+  :root { --disp: "Bricolage Grotesque", Arial, Helvetica, sans-serif; }
+  body { background: #F1F5F2; }
+  .top { background: var(--green); color: #fff; padding: 18px 24px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .top h1 { margin: 0; font: 800 34px/1.05 var(--disp); color: #fff; }
+  .top span { color: #DDE6E1; font-weight: bold; }
+  .top .live { margin-left: auto; color: #fff; }
+  .top .live b { color: var(--gold); font: 800 22px/1 var(--disp); }
+  .page { max-width: 1100px; margin: 0 auto; padding: 22px 24px 60px; display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 24px; align-items: start; }
+  .card { background: #fff; border-radius: 14px; padding: 18px 20px; }
+  .card h2 { margin: 0 0 10px; font: 800 22px/1.15 var(--disp); color: var(--green); }
+  .qr img { width: 100%; height: auto; display: block; border: 3px solid var(--gold); border-radius: 12px; }
+  .qr .link { font: 700 17px/1.3 var(--disp); color: var(--green); word-break: break-all; margin: 12px 0 10px; }
+  .qr p { font-size: 15px; color: var(--muted); margin: 10px 0 0; }
+  .demo { grid-column: 1 / -1; background: var(--cream); border-left: 5px solid var(--gold-dark); border-radius: 10px; padding: 12px 16px; margin: 0; }
+  ol.steps { list-style: none; margin: 0; padding: 0; counter-reset: s; display: grid; gap: 14px; }
+  ol.steps > li { counter-increment: s; background: #fff; border-radius: 14px; padding: 18px 20px 18px 70px; position: relative; }
+  ol.steps > li::before { content: counter(s); position: absolute; left: 20px; top: 16px; width: 36px; height: 36px; border-radius: 50%; background: var(--green); color: #fff;
+    font: 800 20px/36px var(--disp); text-align: center; }
+  ol.steps h2 { margin: 2px 0 8px; font: 800 21px/1.2 var(--disp); color: var(--ink); }
+  ol.steps p { margin: 0 0 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .side { display: grid; gap: 24px; }
+  .small { font-size: 15px; color: var(--muted); margin: 8px 0 0; }
+  .btn.danger { background: #fff; color: var(--bad); border: 2px solid var(--bad); }
+  @media (max-width: 760px) { .page { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>{{TITLE}}</h1>
+  <span>Host screen</span>
+  <span class="live"><b id="n-ans">0</b> answers and <b id="n-lists">0</b> toolkit lists</span>
+</header>
+
+<main class="page">
+  <p class="demo" id="demo" hidden>You are trying the lab with sample people. Their answers are kept apart from real ones, and they are gone the next time you start the lab.</p>
+
+  <div class="side">
+    <section class="card qr">
+      <h2>Link for phones</h2>
+      <img id="qr" alt="QR code for the Find your group form">
+      <p class="link" id="link"></p>
+      <button type="button" class="btn light" id="copy">Copy the link</button>
+      <p>Anyone with this link can join while the lab runs. The link changes each time you start the lab.</p>
+    </section>
+
+    <section class="card">
+      <h2>Your room</h2>
+      <p id="room" style="margin:0"></p>
+      <p class="small">To change the room or the kinds of assignment, ask Claude, or edit settings.json and start the lab again.</p>
+    </section>
+  </div>
+
+  <ol class="steps">
+    <li>
+      <h2>Put the Find your group screen on the projector</h2>
+      <p>People scan the QR code and answer on their phones. When most people have answered, move the pointer to the bottom of that screen and press Make groups. Then press 4 to show the room map, so people can find their tables.</p>
+      <div class="row"><a class="btn" href="groups" target="_blank" rel="noopener">Open Find your group</a></div>
+    </li>
+    <li>
+      <h2>Put the toolkit screen on the projector</h2>
+      <p>One person at each table scans the code on that screen. The table names one assignment, lists its parts, and picks who does each part. Each table's list shows up on the screen when the table sends it.</p>
+      <div class="row"><a class="btn" href="toolkit" target="_blank" rel="noopener">Open the toolkit</a></div>
+    </li>
+    <li>
+      <h2>Save the results</h2>
+      <p>Each button saves a file that opens in Excel or Google Sheets. The answers also stay on this computer until you delete them.</p>
+      <div class="row">
+        <a class="btn light" href="api/export/toolkit.csv">Download the toolkit lists</a>
+        <a class="btn light" href="api/export/groups.csv">Download the groups</a>
+      </div>
+    </li>
+    <li>
+      <h2>Clear the lab for the next session</h2>
+      <p>This button deletes every name, group, and toolkit list on this computer. You can't undo it, so save the results first.</p>
+      <div class="row"><button type="button" class="btn danger" id="reset">Delete all answers and lists</button></div>
+      <p class="msg" id="msg" role="status"></p>
+    </li>
+  </ol>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let link = "";
+
+async function counts() {
+  try {
+    const h = await fetch("healthz", { cache: "no-store" }).then((r) => r.json());
+    $("n-ans").textContent = h.answers;
+    $("n-lists").textContent = h.lists;
+  } catch (e) {}
+}
+
+$("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(link); $("copy").textContent = "Copied"; }
+  catch (e) { $("copy").textContent = "Select the link above and copy it"; }
+  setTimeout(() => { $("copy").textContent = "Copy the link"; }, 2500);
+});
+
+$("reset").addEventListener("click", async () => {
+  if (!confirm("Delete every answer, group, and toolkit list? You can't undo this.")) return;
+  const r = await fetch("api/reset-all", { method: "POST", headers: { "content-type": "application/json", "x-lab-host": "1" }, body: "{}" });
+  const out = await r.json().catch(() => ({}));
+  $("msg").textContent = r.ok ? "Deleted " + out.cleared.answers + " answers and " + out.cleared.lists + " toolkit lists." : out.error || "That did not work. Try again.";
+  counts();
+});
+
+fetch("api/config").then((r) => r.json()).then((c) => {
+  link = c.base + "/match";
+  $("link").textContent = link;
+  $("qr").src = "qr/match.svg?for=" + encodeURIComponent(c.base);
+  $("demo").hidden = !c.demo;
+  const r = c.room;
+  $("room").textContent = "Your room has " + r.tables + (r.tables === 1 ? " table" : " tables") + " with " + r.seats + " seats at each. People pick from " +
+    c.assign.length + " kinds of assignment, and groups start at " + c.groupSize + " people.";
+  if (/^http:\/\/localhost/.test(c.base)) $("link").insertAdjacentHTML("afterend", '<p class="msg bad">This link works only on this computer. Start the lab with node start.js to get a link for phones.</p>');
+});
+counts();
+setInterval(counts, 5000);
+</script>
+</body>
+</html>

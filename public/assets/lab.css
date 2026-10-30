@@ -1,0 +1,58 @@
+/* Shared look for every page: green and gold, Arial. Phones come first, and the host screens
+   grow for the projector. */
+:root {
+  --green: #006643;
+  --gold: #DDD055;
+  --gold-dark: #B8A840;
+  --gold-text: #8A7C1E;
+  --pale: #EEF3F1;
+  --cream: #FBF7EA;
+  --ink: #1A1F1C;
+  --muted: #5C6360;
+  --line: #C9D3CE;
+  --white: #FEFFFF;
+  --bad: #B3261E;
+  --f: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--white); color: var(--ink); font: 17px/1.45 var(--f); }
+.wrap { max-width: 600px; margin: 0 auto; padding: 18px 16px 48px; }
+.site { margin: 0; font-size: 14px; font-weight: bold; color: var(--green); }
+h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.15; color: var(--green); }
+.rule { width: 54px; height: 4px; background: var(--gold); margin: 12px 0 14px; }
+.lead { margin: 0 0 18px; font-size: 18px; }
+a { color: var(--green); font-weight: bold; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: bold 17px var(--f); background: var(--green); color: #fff;
+  border: 0; border-radius: 10px; padding: 13px 18px; cursor: pointer; text-decoration: none; min-height: 48px; }
+.btn.light { background: var(--white); color: var(--green); border: 2px solid var(--green); }
+.btn.gold { background: var(--gold); color: var(--ink); }
+.btn:disabled { opacity: 0.55; cursor: default; }
+.btn:focus-visible, input:focus-visible, textarea:focus-visible, .check:focus-within { outline: 3px solid var(--gold-dark); outline-offset: 2px; }
+
+.field { margin: 0 0 20px; padding: 0; border: 0; min-width: 0; }
+.field > label:not(.check), .field > legend { display: block; font-weight: bold; font-size: 17px; margin: 0 0 6px; padding: 0; }
+.opt { font-weight: normal; color: var(--muted); }
+.hint { margin: -2px 0 8px; font-size: 15px; color: var(--muted); }
+/* 17px text keeps iOS from zooming in on a tap, and 48px is the smallest tap target Android asks for. */
+input[type="text"], textarea { width: 100%; min-height: 48px; font: 17px var(--f); padding: 12px 12px; border: 1px solid #A9B8B1; border-radius: 10px; background: #fff; color: var(--ink); }
+textarea { resize: vertical; min-height: 78px; line-height: 1.4; }
+
+.check { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; margin-top: 8px; }
+.check input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--green); flex: none; }
+.check b { display: block; }
+.check small { display: block; font-size: 15px; color: var(--muted); }
+.check.spring { border: 2px solid var(--gold-dark); background: var(--cream); }
+
+.photo-box { border: 2px dashed #9FB3AA; border-radius: 12px; padding: 14px; background: #fff; text-align: center; }
+.photo-box img { display: block; max-width: 100%; max-height: 320px; margin: 0 auto 10px; border-radius: 8px; }
+.safety { margin: 0 0 10px; padding: 10px 12px; background: var(--pale); border-left: 4px solid var(--gold-dark); font-size: 15px; }
+
+.msg { min-height: 22px; margin: 10px 0 0; font-size: 16px; }
+.msg.bad { color: var(--bad); font-weight: bold; }
+.done { background: var(--pale); border-radius: 14px; padding: 20px 18px; }
+.done h2 { margin: 0 0 14px; font-size: 22px; color: var(--green); }
+.done .row { display: flex; gap: 10px; flex-wrap: wrap; }
+[hidden] { display: none !important; }

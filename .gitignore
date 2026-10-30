@@ -1,0 +1,6 @@
+# Answers from real sessions stay on the computer that ran them.
+data/
+# cloudflared, when Claude downloads it into the folder.
+bin/
+node_modules/
+.DS_Store

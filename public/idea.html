@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build the toolkit · {{TITLE}}</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- The heading font loads on the side, so a slow or blocked font server never keeps the page blank. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/lab.css">
+<script src="assets/phone.js"></script>
+<style>
+  :root { --disp: "Bricolage Grotesque", Arial, Helvetica, sans-serif; }
+  body { overflow-wrap: anywhere; }
+  h1 { font: 800 34px/1.05 var(--disp); }
+  textarea { min-height: 120px; }
+  .group { margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; background: var(--green); color: #fff; font-weight: bold; }
+  .part { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 10px 12px; margin-top: 10px; }
+  .part input[type="text"] { margin-bottom: 8px; }
+  .levels { display: grid; grid-template-columns: 1fr; gap: 6px; }
+  .lv { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; font-size: 16px; }
+  .lv input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--k); }
+  .lv:has(input:checked) { border-color: var(--k); background: color-mix(in srgb, var(--k) 12%, #fff); font-weight: bold; }
+  .lv:focus-within { outline: 3px solid var(--gold-dark); outline-offset: 2px; }
+  .lv0 { --k: #006643; } .lv1 { --k: #8C6D00; } .lv2 { --k: #4B57B8; }
+  .section { font: 800 22px/1.15 var(--disp); color: var(--green); margin: 26px 0 6px; }
+  .part.missing { border: 2px solid var(--bad); }
+  .part .miss { margin: 8px 0 2px; min-height: 0; }
+  [aria-invalid="true"] { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <p class="site">{{TITLE}}</p>
+  <h1>Build the toolkit</h1>
+  <div class="rule"></div>
+  <p class="group" id="group" hidden></p>
+
+  <form id="form" novalidate>
+    <p class="lead">Name one assignment, list its parts, and pick who does each part. Everyone in the room sees your answers on the screen.</p>
+    <div class="field">
+      <label for="f-assignment">Which assignment is your table looking at?</label>
+      <p class="hint" id="kind-hint">Name one assignment of your table&#39;s kind, such as a final team pitch.</p>
+      <input type="text" id="f-assignment" maxlength="120" autocomplete="off" enterkeyhint="next">
+      <p class="msg bad" id="assign-msg" hidden>Name the assignment before you send it.</p>
+    </div>
+    <fieldset class="field">
+      <legend>What are the parts of this assignment, and who does each part?</legend>
+      <p class="hint">Your table decides the parts. You can add up to 12.</p>
+      <div id="parts"></div>
+      <button type="button" class="btn light" id="add-part" style="margin-top:10px">Add another part</button>
+    </fieldset>
+    <button type="submit" class="btn" id="send" style="width:100%">Send our answers</button>
+    <p class="msg" id="msg" role="status"></p>
+  </form>
+
+  <div class="done" id="done" hidden>
+    <h2>Your answers are on the screen.</h2>
+    <p style="margin: -6px 0 16px;">Look for your parts on the Toolkit screen.</p>
+    <button type="button" class="btn light" id="again">Add another assignment</button>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+// assets/phone.js picks the phone's id, and keeps it even when the phone blocks storage.
+const device = labDevice;
+const draft = labDraft("lab-draft-idea");
+const newKey = () => Math.random().toString(36).slice(2, 12);
+function say(text, bad) { $("msg").textContent = text; $("msg").className = "msg" + (bad ? " bad" : ""); }
+
+// The three choices come from settings.json, through api/config.
+let LEVELS = ["Only the student", "Student + AI", "Agentic AI with Supervision"];
+// The server keeps 12 parts per assignment, so the page stops there too.
+const MAX_PARTS = 12;
+let parts = 0;
+function addPart(p) {
+  const i = parts++;
+  const d = document.createElement("div");
+  d.className = "part";
+  d.innerHTML = '<input type="text" class="pname" maxlength="80" autocomplete="off" enterkeyhint="next" placeholder="Part ' + (i + 1) + ', such as research or slides" aria-label="Part ' + (i + 1) + '">' +
+    '<div class="levels">' + LEVELS.map((l, k) => '<label class="lv lv' + k + '"><input type="radio" name="lv-' + i + '" value="' + k + '"><span>' + l + "</span></label>").join("") + "</div>" +
+    '<p class="msg bad miss" hidden>Pick who does this part.</p>';
+  $("parts").appendChild(d);
+  if (p) {
+    d.querySelector(".pname").value = p.name || "";
+    const r = d.querySelector('input[value="' + p.level + '"]');
+    if (r) r.checked = true;
+  }
+  // The last box gets a Done key, because the Go key there closes the keyboard.
+  document.querySelectorAll(".pname").forEach((x, k, all) => x.setAttribute("enterkeyhint", k === all.length - 1 ? "done" : "next"));
+  $("add-part").hidden = parts >= MAX_PARTS;
+}
+function mark(part, on) { part.classList.toggle("missing", on); part.querySelector(".miss").hidden = !on; }
+
+// Each set of answers carries a key. Pressing Send again after a lost answer sends the same key,
+// so the server keeps one copy.
+let key = newKey();
+function current() {
+  return { key, assignment: $("f-assignment").value, parts: [...document.querySelectorAll(".part")].map((d) => ({
+    name: d.querySelector(".pname").value,
+    level: Number((d.querySelector("input[type=radio]:checked") || { value: -1 }).value),
+  })) };
+}
+// The form keeps a draft on this phone until the answers go through (see assets/phone.js).
+const saveDraft = () => draft.save(current());
+function resetForm(d) {
+  key = (d && d.key) || newKey();
+  $("f-assignment").value = (d && d.assignment) || "";
+  $("parts").innerHTML = ""; parts = 0;
+  const list = d && Array.isArray(d.parts) ? d.parts.slice(0, MAX_PARTS) : [];
+  for (let i = 0; i < Math.max(3, list.length); i++) addPart(list[i]);
+}
+resetForm(draft.load());
+$("form").addEventListener("input", saveDraft);
+$("form").addEventListener("change", (e) => {
+  if (e.target.type === "radio") mark(e.target.closest(".part"), false);
+  saveDraft();
+});
+$("f-assignment").addEventListener("input", () => { $("assign-msg").hidden = true; $("f-assignment").removeAttribute("aria-invalid"); });
+$("add-part").addEventListener("click", () => { addPart(); $("parts").lastElementChild.querySelector("input").focus(); saveDraft(); });
+labKeys($("form"));
+
+Promise.all([
+  labFetch("api/match/mine", { headers: { "x-lab-device": device }, cache: "no-store" }).then((r) => r.json()).catch(() => ({})),
+  labFetch("api/config").then((r) => r.json()),
+]).then(([out, cfg]) => {
+  if (Array.isArray(cfg.levels) && cfg.levels.length === 3) {
+    LEVELS = cfg.levels;
+    document.querySelectorAll(".lv").forEach((l) => { l.querySelector("span").textContent = LEVELS[Number(l.querySelector("input").value)]; });
+  }
+  if (!out.group) return;
+  const kind = (cfg.assign.find((a) => a.id === out.group.topic) || {}).name || "";
+  $("group").textContent = "You're sending this for " + (out.group.table ? "table " + out.group.table + ", " : "") + "group " + out.group.n + (kind ? ": " + kind.toLowerCase() + "." : ".");
+  $("group").hidden = false;
+  if (kind) $("kind-hint").textContent = "Name one assignment that is a kind of " + kind.toLowerCase() + ".";
+}).catch(() => {});
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const assignment = $("f-assignment").value.trim();
+  const elements = current().parts.map((p) => ({ name: p.name.trim(), level: p.level })).filter((e) => e.name);
+  if (!assignment) { say(""); $("assign-msg").hidden = false; $("f-assignment").setAttribute("aria-invalid", "true"); $("f-assignment").focus(); return; }
+  if (!elements.length) { say("List at least one part before you send it.", true); return; }
+  // Each named part with no choice gets a red border and a note, and the first one scrolls into view.
+  const missing = [...document.querySelectorAll(".part")].filter((d) => d.querySelector(".pname").value.trim() && !d.querySelector("input[type=radio]:checked"));
+  document.querySelectorAll(".part").forEach((d) => mark(d, missing.includes(d)));
+  if (missing.length) { say("Pick who does each part before you send it.", true); missing[0].scrollIntoView({ block: "center" }); return; }
+  $("send").disabled = true;
+  say("Sending...");
+  try {
+    const r = await labFetch("api/ideas", { method: "POST", headers: { "content-type": "application/json", "x-lab-device": device }, body: JSON.stringify({ assignment, elements, key }) });
+    const out = await r.json().catch(() => ({}));
+    if (!r.ok) { say(out.error || "Your answers did not go through. Press Send our answers again.", true); return; }
+    draft.clear();
+    key = newKey();
+    say("");
+    $("form").hidden = true;
+    $("done").hidden = false;
+    window.scrollTo(0, 0);
+  } catch (err) {
+    say("Your phone lost its connection. Your words are still in the form, so check the wifi and press Send our answers again.", true);
+  } finally {
+    $("send").disabled = false;
+  }
+});
+
+$("again").addEventListener("click", () => {
+  resetForm(null);
+  $("done").hidden = true;
+  $("form").hidden = false;
+  $("f-assignment").focus();
+});
+</script>
+</body>
+</html>

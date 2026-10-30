@@ -1,0 +1,31 @@
+{
+  "title": "The Assignment Lab",
+  "hostName": "",
+  "port": 3063,
+  "room": {
+    "tables": 12,
+    "seatsPerTable": 8,
+    "tablesPerRow": 3,
+    "staggerRows": false
+  },
+  "groupSize": 3,
+  "department": {
+    "ask": false,
+    "label": "Your department",
+    "hint": "The host uses it to put people from different departments in each group.",
+    "choices": []
+  },
+  "toolkitChoices": ["Only the student", "Student + AI", "Agentic AI with Supervision"],
+  "assignments": [
+    { "id": "teampres", "name": "Team presentations", "hint": "Students present as a team" },
+    { "id": "client", "name": "Projects with an outside client", "hint": "Teams work for a company or an organization" },
+    { "id": "writing", "name": "Take-home written assignments", "hint": "Papers, memos, and essays" },
+    { "id": "case", "name": "Case analyses", "hint": "Students analyze a case in writing or in class discussion" },
+    { "id": "exams", "name": "Exams and quizzes", "hint": "In class or online" },
+    { "id": "problems", "name": "Problem sets and data analysis", "hint": "Calculations, spreadsheets, models, or code" },
+    { "id": "reflect", "name": "Reflections and journals", "hint": "Students write about their own learning" },
+    { "id": "discuss", "name": "Online discussion posts", "hint": "Posts and replies in your course site" },
+    { "id": "sim", "name": "Simulations and role plays", "hint": "Students act out a decision or a negotiation" },
+    { "id": "pitch", "name": "Business plans and pitches", "hint": "Students write a plan or pitch a venture" }
+  ]
+}
