@@ -12,6 +12,7 @@
 
 'use strict';
 const fs = require('fs');
+const net = require('net');
 const os = require('os');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
@@ -123,6 +124,19 @@ async function reachable(url) {
   return false;
 }
 
+// A Mac lets the lab listen on 127.0.0.1 while another program already listens on the same port for
+// every address, so the port looks free. The lab skips any port where something already answers.
+function portAnswers(port) {
+  const knock = (host) => new Promise((resolve) => {
+    const s = net.connect({ port, host });
+    s.setTimeout(500);
+    s.once('connect', () => { s.destroy(); resolve(true); });
+    s.once('timeout', () => { s.destroy(); resolve(false); });
+    s.once('error', () => resolve(false));
+  });
+  return Promise.all([knock('127.0.0.1'), knock('::1')]).then((r) => r.includes(true));
+}
+
 function saveLinks(links) {
   fs.writeFileSync(path.join(DATA, 'links.json'), JSON.stringify({ ...links, demo: DEMO, pid: process.pid, startedAt: new Date().toISOString() }, null, 2));
 }
@@ -187,6 +201,7 @@ async function onTunnelLost() {
   const bindHost = mode === 'cloudflare' ? '127.0.0.1' : '0.0.0.0';
   const want = portArg || S.port;
   for (let p = want; p < want + 20 && !port; p++) {
+    if (await portAnswers(p)) continue;
     try { port = await lab.listen(p, bindHost); } catch (e) { if (e.code !== 'EADDRINUSE') throw e; }
   }
   if (!port) { console.error(`Ports ${want} to ${want + 19} are all busy. Start the lab with --port and another number, such as --port 4100.`); process.exit(1); }
